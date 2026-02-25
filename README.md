@@ -23,7 +23,7 @@ The details of this package can be seen in https://github.com/tangzheng1/miMedia
 
 ## 📊 Simulation Study
 
-### Tasks & Methods
+### 🎯 Tasks & Methods
 We benchmarked nine existing microbiome mediation methods across two distinct inferential tasks, alongside our proposed method, CAMRA:
 
 #### Taxon-Level Mediator Discovery
@@ -38,7 +38,7 @@ Goal: Assess whether the microbiome community as a whole mediates the pathway, f
 
 Methods Evaluated: CMM, LDM-med, MedTest, MODIMA, and PERMANOVA-med.
 
-### Simulation Settings
+### ⚙️ Simulation Settings
 
 We employed a template-based resampling approach grounded in the real Absolute Abundance (AA) data from the GALAXY/MicrobLiver cohort (the template .RData can be found in the data/ folder). 
 
@@ -61,5 +61,8 @@ We designed four distinct null settings to test if methods can suppress false po
 2. FDR and Power Evaluation (True Mediation)
 
 - **True Mediation**: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (**overlap size** $num2 \in \{3,5,7,9\}$).
+
+### 🏃 Reproduction Steps
+
 
 ## 🧐 Real Data Analysis
