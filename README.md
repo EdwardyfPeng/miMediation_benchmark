@@ -26,17 +26,15 @@ The details of this package can be seen in our package website https://github.co
 ### 🎯 Tasks & Methods
 We benchmarked nine existing microbiome mediation methods across two distinct inferential tasks, alongside our proposed method, CAMRA:
 
-#### Taxon-Level Mediator Discovery
+1. **Taxon-Level Mediator Discovery**
 
-Goal: Pinpoint individual mediating taxa and evaluate empirical False Discovery Rate (FDR) and discovery power.
+- **Goal**: Pinpoint individual mediating taxa and evaluate empirical False Discovery Rate (FDR) and discovery power.
+- **Methods Evaluated**: `CAMRA`, `CRAmed`, `LDM-med`, `MarZIC`, `microHIMA`, and `multimedia`.
 
-Methods Evaluated: CAMRA, CRAmed, LDM-med, MarZIC, microHIMA, and multimedia.
+2. **Global Community Mediation Testing**
 
-#### Global Community Mediation Testing
-
-Goal: Assess whether the microbiome community as a whole mediates the pathway, focusing on Type I error rate under null settings.
-
-Methods Evaluated: CMM, LDM-med, MedTest, MODIMA, and PERMANOVA-med.
+- **Goal**: Assess whether the microbiome community as a whole mediates the pathway, focusing on Type I error rate under null settings.
+- **Methods Evaluated**: `CMM`, `LDM-med`, `MedTest`, `MODIMA`, and `PERMANOVA-med`.
 
 ### ⚙️ Simulation Settings
 
