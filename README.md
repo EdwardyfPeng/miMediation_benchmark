@@ -78,6 +78,6 @@ After having all RDS files, you can use the R scripts (`taxon_level_summary.R` a
 
 ## 🧐 Real Data Analysis
 
-## Reference
-
+## 📚 Reference
+Wang Q, Li Y, Peng Y, Zhang H, Tang, ZZ (2026). *Error control in microbiome mediator discovery: benchmark and remedy*. Submitted
 
