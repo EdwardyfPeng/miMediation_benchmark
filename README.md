@@ -44,19 +44,21 @@ We employed a template-based resampling approach grounded in the real Absolute A
 
 To systematically evaluate the methods, we generated 500 simulated datasets per scenario and varied the following key configurations:
 
-- Data Dimensions: Sample sizes ($n\in{200,400,800}$) and microbiome feature sizes ($p\in{200,400}$).
-- Effect Direction Balance: When both exposure and outcome associations were present, we evaluated scenarios with Balanced +/- signs (50% positive/negative) and Dominant + signs (90% positive/10% negative) to assess the impact of compositional distortion.
+- **Data Dimensions**: Sample sizes ($n\in{200,400,800}$) and microbiome feature sizes ($p\in{200,400}$).
+- **Effect Direction Balance**: When both exposure and outcome associations were present, we evaluated scenarios with Balanced +/- signs (50% positive/negative) and Dominant + signs (90% positive/10% negative) to assess the impact of compositional distortion.
   
 We designed carefully controlled causal scenarios by assigning exposure- and outcome-associations to specific subsets of taxa (fixed at 10 taxa per path when nonempty):
 
 1. Type I Error Evaluation (Null Scenarios)
 We designed four distinct null settings to test if methods can suppress false positives when no true mediators exist:
-Complete Null: No taxa are associated with either the exposure or the outcome.
-Exposure-only Null: Taxa are associated only with the exposure.
-Outcome-only Null: Taxa are associated only with the outcome.
-Disjoint-path Null: Both paths are present (10 taxa each), but they occur in completely different, non-overlapping taxa sets. Note: This composite null is a highly challenging scenario where existing compositional methods often exhibit substantial anti-conservatism and false positive inflation.
 
-2. FDR and Power Evaluation (True Mediation)
-True Mediation: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (overlap size $num2 \in{3,5,7,9}$) to evaluate detection power across different signal densities.
+- **Complete Null**: No taxa are associated with either the exposure or the outcome.
+- **Exposure-only**: Taxa are associated only with the exposure.
+- **Outcome-only**: Taxa are associated only with the outcome.
+- **Disjoint8 Null**: Both paths are present (10 taxa each), but they occur in completely different, non-overlapping taxa sets. 
+
+3. FDR and Power Evaluation (True Mediation)
+
+- **True Mediatio**n: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (**overlap size** $num2 \in{3,5,7,9}$).
 
 ## 🧐 Real Data Analysis
