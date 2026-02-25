@@ -47,7 +47,7 @@ To systematically evaluate the methods, we generated 500 simulated datasets per 
   
 We designed carefully controlled causal scenarios by assigning exposure- and outcome-associations to specific subsets of taxa (fixed at 10 taxa per path when nonempty):
 
-1. Type I Error Evaluation (Null Scenarios)
+1. **Type I Error Evaluation (Null Scenarios)**
 
 We designed four distinct null settings to test if methods can suppress false positives when no true mediators exist:
 
@@ -56,7 +56,7 @@ We designed four distinct null settings to test if methods can suppress false po
 - **Outcome-only**: Taxa are associated only with the outcome.
 - **Disjoint Null**: Both paths are present (10 taxa each), but they occur in completely different, non-overlapping taxa sets. 
 
-2. FDR and Power Evaluation (True Mediation)
+2. **FDR and Power Evaluation (True Mediation)**
 
 - **True Mediation**: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (**overlap size** num2 = 3/5/7/9).
 
