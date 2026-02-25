@@ -17,7 +17,7 @@ echo "=========================================="
 
 
 # Run R script
-Rscript taxon_level_simulation.R "$template" "$n" "$p" "$num1_A" "$num1_B" "$num2" "$d" "$seed"
+Rscript taxon_level_chtc.R "$template" "$n" "$p" "$num1_A" "$num1_B" "$num2" "$d" "$seed"
 
 exit_code=$?
 
