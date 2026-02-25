@@ -44,7 +44,7 @@ We employed a template-based resampling approach grounded in the real Absolute A
 
 To systematically evaluate the methods, we generated 500 simulated datasets per scenario and varied the following key configurations:
 
-- **Data Dimensions**: Sample sizes ($n\in{200,400,800}$) and microbiome feature sizes ($p\in{200,400}$).
+- **Data Dimensions**: Sample sizes ($n\in \{200,400,800\}$) and microbiome feature sizes ($p\in \{200,400\}$).
 - **Effect Direction Balance**: When both exposure and outcome associations were present, we evaluated scenarios with Balanced +/- signs (50% positive/negative) and Dominant + signs (90% positive/10% negative) to assess the impact of compositional distortion.
   
 We designed carefully controlled causal scenarios by assigning exposure- and outcome-associations to specific subsets of taxa (fixed at 10 taxa per path when nonempty):
@@ -59,6 +59,6 @@ We designed four distinct null settings to test if methods can suppress false po
 
 2. FDR and Power Evaluation (True Mediation)
 
-- **True Mediatio**: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (**overlap size** $num2 \in{3,5,7,9}$).
+- **True Mediatio**: A specific subset of taxa acts as valid mediators by having nonzero AA association effects on both paths (i.e., overlap exists between the two 10-taxa sets). We varied the number of true mediators (**overlap size** $num2 \in \{3,5,7,9\}$).
 
 ## 🧐 Real Data Analysis
