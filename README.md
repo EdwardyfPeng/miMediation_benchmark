@@ -70,10 +70,14 @@ We designed four distinct null settings to test if methods can suppress false po
 
 ### 🏃 Reproduction Steps
 
-The R scripts (`taxon_level_simulation.R` and `global_test_simulation.R`) used to run the simulations on the UW-Madison CHTC cluster are located in `simulations/code/` folder. For each simulation, you can get a RDS file named as "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds". 
+The R scripts (`taxon_level_simulation.R` and `global_test_simulation.R`) used to run the simulations are located in `simulations/code/` folder. The simulations in our paper were executed through High Throughput Computing (HTC) environments, so we also provide the corresponding CHTC submission scripts in the `simulations/CHTC/` folder.
 
-The RDS files from taxon level simulations contain the index of true mediators, q-value matrix and running time for different methods. The RDS files from global test simulations contain the global p-values and running time for different methods. 
+For each simulation, you can get a RDS file named as "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds". The RDS files from taxon level simulations contain the index of true mediators, q-value matrix and running time for different methods. The RDS files from global test simulations contain the global p-values and running time for different methods. 
 
 After having all RDS files, you can use the R scripts (`taxon_level_summary.R` and `global_test_summary.R`) located in `simulations/code/` folder to summarize the data, making plots and summary tables. 
 
 ## 🧐 Real Data Analysis
+
+## Reference
+
+
