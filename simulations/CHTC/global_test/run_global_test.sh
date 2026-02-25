@@ -17,7 +17,7 @@ echo "=========================================="
 
 
 # Run R script
-Rscript global_test.R "$template" "$n" "$p" "$num1_A" "$num1_B" "$num2" "$d" "$seed"
+Rscript global_test_chtc.R "$template" "$n" "$p" "$num1_A" "$num1_B" "$num2" "$d" "$seed"
 
 exit_code=$?
 
