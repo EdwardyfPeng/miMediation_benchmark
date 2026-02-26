@@ -1117,52 +1117,6 @@ ldm_sim <- function(count_m, treat_cov, y) {
        runtime_sec = runtime_sec, global_p = p_global)
 }
 
-
-# ── CMM ──────────────────────────────────────────────────────────────────────
-ccmm_sim <- function(count1, treat1, y1, sudo_count = 0.5,
-                     method = c("boot", "normal")) {
-  method <- match.arg(method)
-  t0 <- proc.time()[["elapsed"]]
-  treat1_vec <- as.vector(treat1)
-  
-  # Helper: extract p-values from confidence intervals
-  get_p_from_ci <- function(IDEs, p_matrix_cmm, method = "fdr", ci_level = 0.95) {
-    ci_lower <- p_matrix_cmm[1, ]; ci_upper <- p_matrix_cmm[2, ]
-    z_alpha2 <- qnorm(1 - (1 - ci_level) / 2)
-    se <- (ci_upper - ci_lower) / (2 * z_alpha2)
-    bad_se <- !is.finite(se) | se <= 0
-    z_val <- IDEs / se; z_val[bad_se] <- NA_real_
-    p_val <- 2 * pnorm(-abs(z_val))
-    p_adj <- p.adjust(p_val, method = method)
-    data.frame(IDE = IDEs, SE = se, z = z_val, p_value = p_val, p_adj = p_adj)
-  }
-  
-  realdata_prop <- (count1 + sudo_count) / rowSums(count1 + sudo_count)
-  M <- realdata_prop
-  
-  if (method == "boot") {
-    res_ccmm <- ccmm::ccmm(y = as.numeric(y1), M = M, tr = treat1_vec, n.boot = 500)
-    res_ccmm_p <- get_p_from_ci(res_ccmm$IDEs, res_ccmm$IDE.CIs)
-    p_adj_cmm <- res_ccmm_p$p_adj
-    idx_cmm <- which(p_adj_cmm < 0.05)
-    global_p <- ifelse(res_ccmm$TIDE.CI[1] > 0 | res_ccmm$TIDE.CI[2] < 0, 1e-6, 1)
-  } else {
-    res_ccmm <- ccmm::ccmm(y1, realdata_prop, treat1_vec, method.est.cov = "normal")
-    se <- sqrt(res_ccmm$Var.IDEs)
-    z_val <- res_ccmm$IDEs / se
-    p_raw <- 2 * pnorm(-abs(z_val))
-    p_adj_cmm <- p.adjust(p_raw, method = "BH")
-    idx_cmm <- which(p_adj_cmm < 0.05)
-    se_tide <- sqrt(res_ccmm$Var.TIDE)
-    global_p <- 2 * pnorm(-abs(res_ccmm$TIDE / se_tide))
-  }
-  
-  runtime_sec <- as.numeric(proc.time()[["elapsed"]] - t0)
-  list(discoveries = idx_cmm, p_med = p_adj_cmm,
-       runtime_sec = runtime_sec, global_p = global_p)
-}
-
-
 # ── CRAmed wrapper ──────────────────────────────────────────────────────────
 CRAmed_sim <- function(count1, treat1, y1) {
   t0 <- proc.time()
