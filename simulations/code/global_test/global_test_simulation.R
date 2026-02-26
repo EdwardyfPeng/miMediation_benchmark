@@ -1,30 +1,7 @@
 ##############################################################################
-# Global-level mediation test simulation
-# ───────────────────────────────────────
-# Benchmark of global mediation tests:
-#   CAMRA, LDM-med, CMM, permanovaFL, MODIMA, MedTest
-#
-# Usage (CHTC):
-#   Rscript global_level_simulation.R <template> <n> <p> <num1_A> <num1_B>
-#                                      <num2> <d> <seed>
+# load packages, source, and data
 ##############################################################################
 
-# ── Command-line arguments ──────────────────────────────────────────────────
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 8) {
-  stop("Need 8 parameters: template, n, p, num1_A, num1_B, num2, d, seed")
-}
-
-template_in <- args[1]             # e.g., "GALAXYMicrobLiver_study"
-n_in        <- as.numeric(args[2]) # sample size: 200/400/800
-p_in        <- as.numeric(args[3]) # number of taxa: 200/400
-num1_A_in   <- as.numeric(args[4]) # number of exposure-associated taxa: 10 or 0
-num1_B_in   <- as.numeric(args[5]) # number of outcome-associated taxa: 10 or 0
-num2_in     <- as.numeric(args[6]) # overlap (true mediators): 0 or 3
-d_in        <- as.numeric(args[7]) # positive-effect proportion: 0.5 or 0.9
-seed_in     <- as.numeric(args[8]) # replicate seed: 1-500
-
-# ── Load packages ───────────────────────────────────────────────────────────
 pkgs <- c(
   "glmnet", "pscl", "plyr", "hdi", "compositions", "parallel",
   "Iso", "cp4p", "HDMT", "tidyverse", "LDM",
@@ -106,335 +83,7 @@ SparCC.frac <- function(x, kmax = 10, alpha = 0.1, Vmin = 1e-4) {
 }
 
 ##############################################################################
-# SECTION 2: CAMRA core functions
-##############################################################################
-
-recover_l_PALM <- function(count_m, treat_cov, cov_ad = NULL,
-                           prev.filter = 0, eps_p = 1e-10) {
-  count_m <- as.matrix(count_m)
-  storage.mode(count_m) <- "numeric"
-  n <- nrow(count_m); p <- ncol(count_m)
-  
-  orig_taxa <- colnames(count_m)
-  if (is.null(orig_taxa)) orig_taxa <- paste0("O", seq_len(p))
-  colnames(count_m) <- orig_taxa
-  
-  stopifnot(length(treat_cov) == n)
-  treat_cov <- matrix(as.numeric(treat_cov), ncol = 1)
-  colnames(treat_cov) <- "treat"
-  rn <- paste0("T", seq_len(n))
-  rownames(count_m) <- rn; rownames(treat_cov) <- rn
-  
-  if (!is.null(cov_ad)) {
-    cov_ad <- as.matrix(cov_ad); stopifnot(nrow(cov_ad) == n)
-    storage.mode(cov_ad) <- "numeric"
-    rownames(cov_ad) <- rn
-    colnames(cov_ad) <- paste0("Cov", seq_len(ncol(cov_ad)))
-  }
-  
-  result1 <- PALM::palm(
-    rel.abd = count_m, covariate.interest = treat_cov,
-    covariate.adjust = cov_ad, prev.filter = prev.filter
-  )
-  r1 <- result1$treat
-  
-  p_full <- rep(1, p); z_full <- rep(0, p); beta_full <- rep(0, p)
-  names(p_full) <- names(z_full) <- names(beta_full) <- orig_taxa
-  
-  feat <- as.character(r1$feature)
-  if (length(feat) > 0) {
-    idx <- match(feat, orig_taxa); ok <- which(!is.na(idx))
-    p_kept <- as.numeric(r1$pval); beta_kept <- as.numeric(r1$coef)
-    p_full[idx[ok]] <- p_kept[ok]; beta_full[idx[ok]] <- beta_kept[ok]
-    p_adj <- pmax(p_kept[ok], eps_p)
-    z_full[idx[ok]] <- stats::qnorm(1 - p_adj / 2) * sign(beta_kept[ok])
-  }
-  
-  list(p = p_full, z = z_full, beta_l = beta_full, feature_kept = feat)
-}
-
-recover_r <- function(count_matrix, treat_cov, y, sudo = 0.5, cov_ad = NULL,
-                      CClasso = FALSE, cov_true = NULL) {
-  logdata  <- log((count_matrix + sudo) / rowSums(count_matrix + sudo))
-  por_data <- (count_matrix + sudo) / rowSums(count_matrix + sudo)
-  
-  if (CClasso) {
-    est_cov <- {
-      res_cov <- fastCCLasso(count_matrix, isCnt = TRUE)
-      diag(sqrt(res_cov$cov_diag)) %*% res_cov$rho %*% diag(sqrt(res_cov$cov_diag))
-    }
-  } else {
-    est_cov <- SparCC.count(count_matrix)$cov.w
-  }
-  if (!is.null(cov_true)) est_cov <- cov_true
-  
-  p <- ncol(count_matrix); n <- nrow(count_matrix)
-  ilr_basis <- compositions::ilrBase(por_data)
-  lasso_data_ilr <- as.matrix(compositions::ilr(por_data))
-  R2 <- ilr_basis
-  Z_ilr <- lasso_data_ilr %*% solve(t(R2) %*% est_cov %*% R2) %*% t(R2) %*% est_cov
-  
-  # FWL residualization: treatment (+ confounders) unpenalized
-  if (is.null(dim(treat_cov))) {
-    treat_df <- data.frame(treat = as.numeric(treat_cov))
-  } else {
-    treat_df <- as.data.frame(treat_cov)
-    if (nrow(treat_df) != n) stop("treat_cov nrow mismatch with count_matrix")
-  }
-  Zdf <- if (!is.null(cov_ad)) {
-    cov_df <- as.data.frame(cov_ad)
-    if (nrow(cov_df) != n) stop("cov_ad nrow mismatch with count_matrix")
-    cbind(treat_df, cov_df)
-  } else { treat_df }
-  
-  Z0 <- model.matrix(~ ., data = Zdf)
-  qrZ <- qr(Z0)
-  y_tilde <- as.numeric(y - qr.fitted(qrZ, y))
-  X_tilde <- Z_ilr - qr.fitted(qrZ, Z_ilr)
-  
-  outRidge <- hdi::ridge.proj(x = X_tilde, y = y_tilde)
-  all_p  <- outRidge$pval
-  beta_r <- as.vector(outRidge$bhat)
-  z      <- as.vector(qnorm(1 - all_p / 2) * sign(beta_r))
-  
-  list(p = all_p, z = z, beta_r = beta_r,
-       y_tilde = y_tilde, X_tilde = X_tilde, Z0 = Z0)
-}
-
-pre_filter_fun <- function(count_matrix, treat_cov, y,
-                           const = 2, seed = 42, sudo = 0.5,
-                           cov_ad = NULL, adaptive_L = FALSE) {
-  set.seed(seed)
-  count_matrix <- as.matrix(count_matrix)
-  storage.mode(count_matrix) <- "numeric"
-  n <- nrow(count_matrix); p <- ncol(count_matrix)
-  
-  if (length(treat_cov) != n) stop("treat_cov length != nrow(count_matrix)")
-  y <- as.numeric(y); if (length(y) != n) stop("y length != nrow(count_matrix)")
-  if (!is.null(cov_ad)) {
-    cov_ad <- as.matrix(cov_ad); storage.mode(cov_ad) <- "numeric"
-    if (nrow(cov_ad) != n) stop("nrow(cov_ad) != nrow(count_matrix)")
-  }
-  
-  logdata <- log((count_matrix + sudo) / rowSums(count_matrix + sudo))
-  logdata[logdata < (-10)] <- (-10)
-  
-  est_cov <- SparCC.count(count_matrix)$cov.w
-  por_data <- (count_matrix + sudo) / rowSums(count_matrix + sudo)
-  R2 <- compositions::ilrBase(por_data)
-  Z_ilr <- (logdata %*% R2) %*% solve(t(R2) %*% est_cov %*% R2) %*% t(R2) %*% est_cov
-  
-  treat_vec <- as.numeric(treat_cov)
-  Z0 <- cbind(treat = treat_vec)
-  if (!is.null(cov_ad)) {
-    Z0 <- cbind(Z0, cov_ad); colnames(Z0) <- make.names(colnames(Z0), unique = TRUE)
-  }
-  
-  X <- cbind(Z_ilr, Z0)
-  pZ <- ncol(Z_ilr); p0 <- ncol(Z0)
-  pf <- c(rep(1, pZ), rep(0, p0))
-  
-  if (isTRUE(adaptive_L)) {
-    cvfit <- glmnet::cv.glmnet(x = X, y = y, alpha = 1, penalty.factor = pf,
-                               nfolds = 5, type.measure = "mse", standardize = TRUE)
-    b <- as.matrix(coef(cvfit, s = "lambda.min"))
-    beta_Z <- as.numeric(b)[-1][1:pZ]
-    selection_set <- which(beta_Z != 0)
-    if (length(selection_set) == 0) selection_set <- order(abs(beta_Z), decreasing = TRUE)[1]
-    return(sort(unique(as.integer(selection_set))))
-  }
-  
-  K <- max(1L, min(pZ, floor(const * n / log(max(n, 3)))))
-  fit <- glmnet::glmnet(x = X, y = y, alpha = 1, penalty.factor = pf,
-                        dfmax = min(K + p0, pZ + p0), nlambda = 500,
-                        lambda.min.ratio = 1e-6, standardize = TRUE)
-  B <- as.matrix(fit$beta)
-  dfZ <- colSums(B[1:pZ, , drop = FALSE] != 0)
-  idx <- which(dfZ >= K)[1]; if (is.na(idx)) idx <- ncol(B)
-  beta_Z_full <- as.numeric(B[1:pZ, idx])
-  ord <- order(abs(beta_Z_full), decreasing = TRUE)
-  sort(unique(as.integer(ord[seq_len(min(K, length(ord)))])))
-}
-
-p_mediation_maxp <- function(p_alpha, p_beta,
-                             pi_alpha0 = NULL, pi_beta0 = NULL,
-                             pi_method = c("cp4p", "JC"),
-                             weight_method = c("maxp", "product", "indenp")) {
-  stopifnot(length(p_alpha) == length(p_beta))
-  pi_method     <- match.arg(pi_method)
-  weight_method <- match.arg(weight_method)
-  
-  mix_weights_product <- function(pi_alpha0, pi_beta0) {
-    eps <- 1e-8
-    pa <- min(max(pi_alpha0, eps), 1 - 1e-6)
-    pb <- min(max(pi_beta0,  eps), 1 - 1e-6)
-    pi0 <- max(1 - (1 - pa) * (1 - pb), 1e-6)
-    c(w00 = (pa * pb) / pi0, w10 = ((1 - pa) * pb) / pi0,
-      w01 = (pa * (1 - pb)) / pi0, pi0 = pi0)
-  }
-  
-  mix_weights_maxp <- function(p_alpha, p_beta, pi_alpha0, pi_beta0, pi_method) {
-    p_max <- pmax(p_alpha, p_beta)
-    if (pi_method == "cp4p") {
-      obj <- cp4p::estim.pi0(p_max)
-      pi0_hat <- if (!is.null(obj$pi0)) as.numeric(obj$pi0) else mean(unlist(obj))
-    } else {
-      pi0_hat <- miMediation:::.pi0_JC(qnorm(1 - p_max))
-    }
-    clip01 <- function(x) min(max(x, 1e-6), 1 - 1e-6)
-    pi_alpha0 <- clip01(pi_alpha0); pi_beta0 <- clip01(pi_beta0); pi0_hat <- clip01(pi0_hat)
-    w <- pmax(c(w00 = (pi_alpha0 + pi_beta0 - pi0_hat) / pi0_hat,
-                w10 = (pi0_hat - pi_alpha0) / pi0_hat,
-                w01 = (pi0_hat - pi_beta0)  / pi0_hat), 0)
-    w <- w / sum(w); names(w) <- c("w00", "w10", "w01"); w
-  }
-  
-  # Step 1: Clean p-values for null proportion estimation
-  p_alpha_pi0 <- p_alpha; p_beta_pi0 <- p_beta
-  p_alpha_pi0[!is.finite(p_alpha_pi0)] <- 1; p_beta_pi0[!is.finite(p_beta_pi0)] <- 1
-  p_alpha_pi0 <- pmin(pmax(p_alpha_pi0, 0), 1); p_beta_pi0 <- pmin(pmax(p_beta_pi0, 0), 1)
-  
-  # Step 2: Estimate marginal null proportions
-  if (is.null(pi_alpha0) || is.null(pi_beta0)) {
-    if (pi_method == "cp4p") {
-      grab <- function(x) if (!is.null(x$pi0)) as.numeric(x$pi0) else mean(unlist(x), na.rm = TRUE)
-      pi_alpha0 <- grab(cp4p::estim.pi0(p_alpha_pi0))
-      pi_beta0  <- grab(cp4p::estim.pi0(p_beta_pi0))
-    } else {
-      pi_alpha0 <- miMediation:::.pi0_JC(qnorm(1 - p_alpha_pi0))
-      pi_beta0  <- miMediation:::.pi0_JC(qnorm(1 - p_beta_pi0))
-    }
-  }
-  eps <- 1e-8
-  pi_alpha0 <- min(max(pi_alpha0, eps), 1 - eps)
-  pi_beta0  <- min(max(pi_beta0,  eps), 1 - eps)
-  
-  # Step 3: Valid positions
-  keep <- is.finite(p_alpha) & is.finite(p_beta)
-  out  <- rep(NA_real_, length(p_alpha))
-  if (!any(keep)) return(out)
-  p_a <- pmin(pmax(p_alpha[keep], eps), 1 - eps)
-  p_b <- pmin(pmax(p_beta[keep],  eps), 1 - eps)
-  
-  # Step 4: Estimate mixture weights
-  if (weight_method == "maxp") {
-    w <- mix_weights_maxp(p_a, p_b, pi_alpha0, pi_beta0, pi_method)
-  } else if (weight_method == "product") {
-    w_raw <- mix_weights_product(pi_alpha0, pi_beta0)
-    w_vec <- pmax(w_raw[c("w00", "w10", "w01")], 0); w <- w_vec / sum(w_vec)
-    names(w) <- c("w00", "w10", "w01")
-  } else {
-    w_vec <- c(w00 = pi_alpha0 * pi_beta0, w10 = (1 - pi_alpha0) * pi_beta0,
-               w01 = pi_alpha0 * (1 - pi_beta0))
-    w_vec <- pmax(w_vec, 0); w <- w_vec / sum(w_vec)
-  }
-  w00 <- as.numeric(w["w00"]); w10 <- as.numeric(w["w10"]); w01 <- as.numeric(w["w01"])
-  
-  # Step 5: Grenander-based alternative CDF estimation
-  estimate_F1_grenander <- function(p, pi0, eps = 1e-8) {
-    p <- p[is.finite(p)]; p <- pmin(pmax(p, 0), 1)
-    n <- length(p); stopifnot(n > 0); pi0 <- min(max(pi0, 1e-6), 1 - 1e-6)
-    x <- sort(unique(c(0, sort(p), 1))); Fn <- ecdf(p); y <- Fn(x)
-    dx <- diff(x); keep <- dx > eps; xR <- x[-1][keep]; dx <- dx[keep]
-    yL <- y[-length(y)][keep]; yR <- y[-1][keep]
-    s <- (yR - yL) / dx; s_hat <- -Iso::pava(-s, w = dx)
-    f1_hat <- pmax((s_hat - pi0) / (1 - pi0), 0)
-    area <- sum(f1_hat * dx)
-    if (area <= 0) return(function(t) rep(0, length(t)))
-    f1_hat <- f1_hat / area
-    x_knots <- c(0, xR); F1_cum <- c(0, cumsum(f1_hat * dx))
-    function(t) {
-      t <- pmin(pmax(t, 0), 1)
-      pmin(pmax(approx(x_knots, F1_cum, xout = t, method = "linear",
-                       ties = "ordered", rule = 2)$y, 0), 1)
-    }
-  }
-  
-  F1a <- estimate_F1_grenander(p_a, pi_alpha0)
-  F1b <- estimate_F1_grenander(p_b, pi_beta0)
-  
-  # Step 6: Compute mixture-null p-values
-  t <- pmax(p_a, p_b)
-  p_mix <- w00 * (t^2) + w10 * (t * F1a(t)) + w01 * (t * F1b(t))
-  out[keep] <- pmin(pmax(p_mix, 0), 1)
-  out
-}
-
-p_mediation_hdmt_fdr <- function(p_alpha, p_beta, exact_p = 1) {
-  stopifnot(length(p_alpha) == length(p_beta))
-  n <- length(p_alpha); out <- rep(NA_real_, n)
-  keep <- is.finite(p_alpha) & is.finite(p_beta)
-  if (!any(keep)) return(out)
-  pa <- pmin(pmax(p_alpha[keep], 0), 1); pb <- pmin(pmax(p_beta[keep], 0), 1)
-  input <- cbind(pa, pb)
-  nullprop <- HDMT::null_estimation(input)
-  fdr <- HDMT::fdr_est(nullprop$alpha00, nullprop$alpha01, nullprop$alpha10,
-                       nullprop$alpha1, nullprop$alpha2,
-                       input_pvalues = input, exact = exact_p)
-  out[keep] <- fdr; out
-}
-
-CAMRA <- function(count_m, treat_cov, y,
-                  sudo = 0.5, cov_ad = NULL, FDR_level = 0.05,
-                  pre_filter = FALSE, CClasso = FALSE,
-                  cov_true = NULL, seed = 42) {
-  set.seed(seed)
-  t0 <- proc.time()[["elapsed"]]
-  
-  select_otu <- seq_len(ncol(count_m))
-  if (pre_filter) {
-    select_otu <- pre_filter_fun(count_matrix = count_m, treat_cov = treat_cov,
-                                 y = y, const = 2, seed = seed, sudo = sudo, cov_ad = cov_ad)
-  }
-  
-  res1 <- recover_l_PALM(count_m, treat_cov, cov_ad = cov_ad)
-  res2 <- recover_r(count_m, treat_cov, y, cov_ad = cov_ad,
-                    CClasso = CClasso, cov_true = cov_true, sudo = sudo)
-  
-  p1 <- res1$p; p2 <- res2$p
-  p_matrix <- cbind(p1, p2)
-  
-  rawp.perm <- p_mediation_maxp(p1, p2, pi_method = "cp4p", weight_method = "product")
-  p_vec <- p.adjust(rawp.perm, method = "BH")
-  p_vec_all <- p_vec
-  
-  if (pre_filter) {
-    p_vec_f <- p.adjust(rawp.perm[select_otu], method = "BH")
-    p_vec_all[select_otu] <- p_vec_f
-    p_vec_all[-select_otu] <- 1
-  }
-  
-  # HDMT-based FDR with fallback
-  tmp_locfdr <- try(
-    p_mediation_hdmt_fdr(p_matrix[select_otu, 1], p_matrix[select_otu, 2], exact_p = 1),
-    silent = TRUE
-  )
-  if (inherits(tmp_locfdr, "try-error")) {
-    tmp_locfdr <- try(
-      p_mediation_hdmt_fdr(p_matrix[select_otu, 1], p_matrix[select_otu, 2], exact_p = 0),
-      silent = TRUE
-    )
-  }
-  
-  if (inherits(tmp_locfdr, "try-error")) {
-    idx_detected <- which(p_vec_all < FDR_level)
-  } else {
-    p_vec_all[select_otu] <- tmp_locfdr
-    idx_detected <- select_otu[which(tmp_locfdr <= FDR_level)]
-  }
-  
-  globalp.perm <- min(p_vec_all, na.rm = TRUE)
-  runtime_sec <- as.numeric(proc.time()[["elapsed"]] - t0)
-  
-  list(idx_detected = idx_detected, fdr_value = p_vec_all,
-       runtime_sec = runtime_sec, global_p = globalp.perm,
-       beta_l = res1$beta_l, beta_r = res2$beta_r,
-       taxa_detected = colnames(count_m)[idx_detected], p_matrix = p_matrix)
-}
-
-
-##############################################################################
-# SECTION 3: Competing method wrappers
+# SECTION 2: Benchmarking methods
 ##############################################################################
 
 # ── LDM-med ─────────────────────────────────────────────────────────────────
@@ -673,7 +322,7 @@ Medtest_sim <- function(count_m, treat_cov, y,
 
 
 ##############################################################################
-# SECTION 4: Data generation from AA template
+# SECTION 3: Data generation from AA template
 ##############################################################################
 
 generate_data_from_AA <- function(
@@ -767,7 +416,7 @@ generate_data_from_AA <- function(
 
 
 ##############################################################################
-# SECTION 5: Global-level simulation runner
+# SECTION 4: Global-level simulation runner
 ##############################################################################
 
 runone_simulation_Global <- function(
@@ -881,34 +530,22 @@ runone_simulation_Global <- function(
   out_list
 }
 
-
 ##############################################################################
-# SECTION 6: CHTC entry point
+# Example
 ##############################################################################
 
-tryCatch({
-  result_list <- runone_simulation_Global(
-    n = n_in, p = p_in,
-    num1_A = num1_A_in, num1_B = num1_B_in, num2 = num2_in,
-    beta_treat = log(5), beta_outcome = 1, d = d_in,
-    template = template_in,
-    template_dir = ".", save_dir = ".",
-    seed = seed_in, save_rds = FALSE, safe = TRUE
-  )
-  
-  output_filename <- sprintf(
-    "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds",
-    gsub("_study$", "", template_in),
-    n_in, p_in, as.character(d_in),
-    num1_A_in, num1_B_in, num2_in, seed_in
-  )
-  
-  saveRDS(result_list, file = output_filename)
-  cat(sprintf("Success! Results saved to: %s\n", output_filename))
-}, error = function(e) {
-  cat("Error occurred during simulation:\n")
-  message(e)
-  quit(status = 1)
-})
-
+kk <- runone_simulation_Global(
+  n = 200, 
+  p = 200, 
+  num1_A = 10, 
+  num1_B = 10, 
+  num2 = 0,
+  beta_treat = log(5), 
+  beta_outcome = 1, 
+  d = 0.5,
+  template = "GALAXYMicrobLiver_study",
+  template_dir = ".", 
+  save_dir = ".",
+  seed = 1)
+kk
 
