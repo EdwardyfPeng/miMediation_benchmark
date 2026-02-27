@@ -19,7 +19,7 @@ To run the scripts in this repository, you first need to install the `miMediatio
 # Install the miMediation package
 devtools::install_github("tangzheng1/miMediation")
 ```
-The details of this package can be seen in our package website https://github.com/tangzheng1/miMediation.
+The details of this package can be seen on our [package website](https://github.com/tangzheng1/miMediation).
 
 ## 📚 Reference
 Wang Q, Li Y, Peng Y, Zhang H, Tang, ZZ (2026). *Error control in microbiome mediator discovery: benchmark and remedy*. Submitted
