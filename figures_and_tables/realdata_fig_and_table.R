@@ -1,3 +1,4 @@
+# need to run data_analysis.R first before running this script
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
