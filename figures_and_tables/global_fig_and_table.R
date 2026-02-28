@@ -1,4 +1,4 @@
-load("global_test_long.RData")
+load("global_test_long.RData") # from simulations/results/
 load("global_test_summary.RData")
 library(tidyverse)
 library(ggplot2)
