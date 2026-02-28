@@ -60,7 +60,7 @@ kk <- runone_simulation(
 kk
 ```
 
-The simulations in our paper were executed through High Throughput Computing (HTC) environments, so we also provide the corresponding CHTC submission scripts in the `simulations/CHTC/` folder.
+The simulations in our paper were executed through High Throughput Computing (HTC) environments, so we also provide the corresponding CHTC submission scripts in the `simulations/CHTC/` folder. (Notes: Due to an incompatibility encountered when running the `ldm` function in official package `LDM` on our server, we used the implementation available at https://github.com/liudoubletian/CRAmed for our simulations.)
 
 For each simulation, you can get a RDS file named as "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds". The RDS files from taxon level simulations contain the index of true mediators, q-value matrix and running time for different methods. The RDS files from global test simulations contain the global p-values and running time for different methods. 
 
