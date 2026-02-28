@@ -10,7 +10,7 @@ To address this, our paper presents:
 
 ## Structure
 
-This repository contains the data, code, and instructions necessary to reproduce all figures, tables, and numerical results presented in our paper “Error control in microbiome mediator discovery: benchmark and remedy” by Qiyu Wang, Yiluan Li, Yunfei Peng, and Zheng-Zheng Tang.
+This repository contains the data, codes, and instructions necessary to reproduce all figures, tables, and numerical results presented in our paper “Error control in microbiome mediator discovery: benchmark and remedy” by Qiyu Wang, Yiluan Li, Yunfei Peng, and Zheng-Zheng Tang.
 
 The subfolder `data/` contains:
 - The template dataset `GALAXYMicrobLiver_study.RData`, which is used to generate simulated datasets under various experimental settings.
