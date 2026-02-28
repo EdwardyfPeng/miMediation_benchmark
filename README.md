@@ -20,7 +20,7 @@ The subfolder `simulations/` contains the simulation R codes and submission scri
 
 The subfolder `real_data_analysis\` contains 
 - `read_data.R`: R script for cleaning and preprocessing the raw microbiome dataset.
-- `data_analysis.R`: R script for performing the mediation analysis on the cleaned dataset.
+- `data_analysis.R`: R script for performing the mediation analysis on the cleaned dataset using all methods.
 
 Executing these scripts can reproduce the results described in our paper under "Results – Gut microbiome mediation of between-country differences in BMI".
 
