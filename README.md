@@ -12,7 +12,9 @@ To address this, our paper presents:
 
 This repository contains the data, code, and instructions necessary to reproduce all figures, tables, and numerical results presented in our paper “Error control in microbiome mediator discovery: benchmark and remedy” by Qiyu Wang, Yiluan Li, Yunfei Peng, and Zheng-Zheng Tang.
 
-The subfolder `simulations` contains the simulation R codes and submission scripts for high throught computing, and the R codes for aggregating the simulation outputs.
+The subfolder `data/` contains the template data `.RData` for simulation and the cleaned data `real_data.RData` for real data analysis.
+
+The subfolder `simulations/` contains the simulation R codes and submission scripts for high throught computing, and the R codes for aggregating the simulation outputs.
 
 ## Reference
 Wang Q, Li Y, Peng Y, Tang, ZZ (2026). *Error control in microbiome mediator discovery: benchmark and remedy*. Submitted
