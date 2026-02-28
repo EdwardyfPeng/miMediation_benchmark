@@ -11,4 +11,4 @@ The raw metagenomic data is pulled from the `curatedMetagenomicData` R package. 
 The final analytical dataset consists of 863 samples and 186 taxa, which can be found in the `data/` folder. You can also rerun `read_raw.R` to produce it.
 
 ## 🧐 Data Analysis
-We apply both global mediation tests and taxon-level tests to the cleaned dataset. To reproduce the real data application tables and figures (including Figure 5 and Supplementary Table S4), you can run `data_analysis.R`.
+We apply both global mediation tests and taxon-level tests to the cleaned dataset. To reproduce the results described in our paper, you can run `data_analysis.R`.
