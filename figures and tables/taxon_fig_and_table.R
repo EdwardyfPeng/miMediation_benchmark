@@ -29,62 +29,7 @@ target_levels <- c(
 
 ###### Table ######
 
-###### Table S3 Any-discoverate for benchmark methods under 0.05 nominal level ######
-
-table_s3_data <- taxon_level_summary %>%
-  filter(alpha == 0.05) %>% # fixed nominal level at 0.05
-  filter(num2 == 0) %>% # mediation null
-  filter(method %in% taxon_benchmark_methods) %>%
-  mutate(
-    Scenario = case_when(
-      num1A == 0  & num1B == 0  ~ "Complete Null",
-      num1A == 10 & num1B == 0  ~ "Exposure-only",
-      num1A == 0  & num1B == 10 ~ "Outcome-only",
-      num1A == 10 & num1B == 10 & d == 0.5 ~ "Disjoint (Balanced +/-)",
-      num1A == 10 & num1B == 10 & d == 0.9 ~ "Disjoint (Dominant +)"
-    )) %>%
-  mutate(
-    Scenario = factor(Scenario, levels = target_levels)
-  ) %>%
-  dplyr::select(Scenario, p, n, method, type1_error)
-
-table_s3_final <- table_s3_data %>%
-  pivot_wider(
-    names_from = method,
-    values_from = type1_error
-  ) %>%
-  arrange(Scenario, p, n) %>%
-  dplyr::select(Scenario, p, n, everything())
-
-
-###### Table S4 Any-false-discovery rate of CAMRA ######
-
-table_s4_data <- taxon_level_summary %>%
-  filter(alpha == 0.05) %>% # fixed nominal level at 0.05
-  filter(num2 == 0) %>% # mediation null
-  filter(method == "CAMRA") %>%
-  mutate(
-    Scenario = case_when(
-      num1A == 0  & num1B == 0  ~ "Complete Null",
-      num1A == 10 & num1B == 0  ~ "Exposure-only",
-      num1A == 0  & num1B == 10 ~ "Outcome-only",
-      num1A == 10 & num1B == 10 & d == 0.5 ~ "Disjoint (Balanced +/-)",
-      num1A == 10 & num1B == 10 & d == 0.9 ~ "Disjoint (Dominant +)"
-    )) %>%
-  mutate(
-    Scenario = factor(Scenario, levels = target_levels)
-  ) %>%
-  dplyr::select(Scenario, p, n, method, type1_error)
-
-table_s4_final <- table_s4_data %>%
-  pivot_wider(
-    names_from = method,
-    values_from = type1_error
-  ) %>%
-  arrange(Scenario, p, n) %>%
-  dplyr::select(Scenario, p, n, everything())
-
-###### Table S5 Computation time across various dataset dimensions ######
+###### Table S3 Computation time across various dataset dimensions ######
 
 tbl_runtime_raw <- taxon_level_long %>%
   group_by(method, n, p) %>%
@@ -99,7 +44,7 @@ tbl_runtime_raw <- taxon_level_long %>%
     setting = sprintf("n=%d, p=%d", n, p)
   )
 
-table_s5 <- tbl_runtime_raw %>%
+table_s3 <- tbl_runtime_raw %>%
   select(method, setting, val_str) %>%
   pivot_wider(names_from = setting, values_from = val_str)
 
