@@ -64,4 +64,4 @@ The simulations in our paper were executed through High Throughput Computing (HT
 
 For each simulation, you can get a RDS file named as "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds". The RDS files from taxon level simulations contain the index of true mediators, q-value matrix and running time for different methods. The RDS files from global test simulations contain the global p-values and running time for different methods. 
 
-After having all RDS files, you can use the R scripts (`taxon_level_summary.R` and `global_test_summary.R`) located in `simulations/code/` folder to summarize the data, making plots and summary tables. 
+After having all RDS files, you can use the R scripts (`taxon_level_summary.R` and `global_test_summary.R`) located in `code/` to aggregate and summarize the data. The aggregated and summarized data can be found in the subfolder `results\`.
