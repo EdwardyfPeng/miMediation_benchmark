@@ -1,23 +1,23 @@
-load("taxon_level_summary.RData")
+load("taxon_level_summary.RData") #from simulations/results/
 load("taxon_level_long.RData")
 library(tidyverse)
 library(ggplot2)
 library(patchwork)
 
 my_colors <- c(
-  "CAMRA"      = "red",
-  "LDM-med"    = "blue",  
-  "microHIMA"  = "grey60",  
+  "CAMRA"      = "red",  
+  "LDM-med"  = "blue",  
+  "microHIMA"    = "grey60",  
   "MarZIC"     = "green",  
   "multimedia" = "yellow", 
   "CRAmed"     = "orange",  
-  "CMM"        = "darkgreen",
+  "CMM"        = "#7FC97F",
   "PERMANOVA-med" = "purple",
   "MODIMA"     = "pink",
   "MedTest"    = "skyblue"
-) # define the colors
+)
 
-benchmark_methods_taxon <- c("HIMA", "LDM", "MarZIC", "multimedia", "CRAmed")
+benchmark_methods_taxon <- c("microHIMA", "LDM-med", "MarZIC", "multimedia", "CRAmed")
 
 target_levels <- c(
   "Complete Null",
@@ -56,7 +56,7 @@ table_s3 <- tbl_runtime_raw %>%
 plot_fig2_data <- taxon_level_summary %>%
   filter(alpha == 0.05) %>%       
   filter(num2 > 0) %>%            # mediation_signal
-  filter(method %in% taxon_benchmark_methods) %>%
+  filter(method %in% benchmark_methods_taxon) %>%
   mutate(
     num2 = as.factor(num2),       
     n_lab = paste0("n = ", n),    
@@ -170,7 +170,7 @@ final_fig4 <- (p1 /plot_spacer()/ p2) +
 plot_S2_data <- taxon_level_summary %>%
   filter(alpha == 0.05) %>%       
   filter(num2 > 0) %>%            # mediation_signal
-  filter(method %in% taxon_benchmark_methods) %>%
+  filter(method %in% benchmark_methods_taxon) %>%
   mutate(
     num2 = as.factor(num2),       
     n_lab = paste0("n = ", n),    
