@@ -42,7 +42,7 @@ We designed four distinct null settings to test if methods can suppress false po
 The R scripts (`taxon_level_simulation.R` and `global_test_simulation.R`) used to run the simulations are located in `simulations/code/` folder. 
 
 ```{r}
-## Example for taxon level test
+## Example for one simulation of taxon level test ##
 kk <- runone_simulation(
   n = 200, 
   p = 200, 
@@ -64,4 +64,4 @@ The simulations in our paper were executed through High Throughput Computing (HT
 
 For each simulation, you can get a RDS file named as "template_%s_n_%d_p%d_d%s_num1A_%d_num1B_%d_num2_%d_seed_%d.rds". The RDS files from taxon level simulations contain the index of true mediators, q-value matrix and running time for different methods. The RDS files from global test simulations contain the global p-values and running time for different methods. 
 
-After having all RDS files, you can use the R scripts (`taxon_level_summary.R` and `global_test_summary.R`) located in `code/` to aggregate and summarize the data. The aggregated and summarized data can be found in the subfolder `results\`.
+After having all RDS files, you can use the R scripts (`taxon_level_summary.R` and `global_test_summary.R`) located in `code/` to aggregate and summarize the data. The aggregated and summarized data can be found in the subfolder `results/`.
