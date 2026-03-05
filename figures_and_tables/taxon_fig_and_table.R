@@ -96,7 +96,7 @@ fig5_data <- taxon_level_summary %>%
     .groups = "drop"
   )
 
-plot_fig5_data <- fig4_data %>%
+plot_fig5_data <- fig5_data %>%
   mutate(
     num2 = as.factor(num2),       
     n_lab = paste0("n = ", n),    
