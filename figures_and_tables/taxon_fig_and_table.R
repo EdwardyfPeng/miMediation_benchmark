@@ -27,33 +27,10 @@ target_levels <- c(
   "Disjoint (Dominant +)"
 )
 
-###### Table ######
-
-###### Table S3 Computation time across various dataset dimensions ######
-
-tbl_runtime_raw <- taxon_level_long %>%
-  group_by(method, n, p) %>%
-  summarise(
-    med = median(runtime_sec, na.rm = TRUE),
-    q1  = quantile(runtime_sec, 0.25, na.rm = TRUE),
-    q3  = quantile(runtime_sec, 0.75, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    val_str = sprintf("%.2f (%.2f, %.2f)", med, q1, q3),
-    setting = sprintf("n=%d, p=%d", n, p)
-  )
-
-table_s3 <- tbl_runtime_raw %>%
-  select(method, setting, val_str) %>%
-  pivot_wider(names_from = setting, values_from = val_str)
-
-
 ###### Figure ######
+###### Fig 3 Empirical FDR of taxon-level mediation tests ######
 
-###### Fig 2 Empirical FDR of taxon-level mediation tests ######
-
-plot_fig2_data <- taxon_level_summary %>%
+plot_fig3_data <- taxon_level_summary %>%
   filter(alpha == 0.05) %>%       
   filter(num2 > 0) %>%            # mediation_signal
   filter(method %in% benchmark_methods_taxon) %>%
@@ -91,22 +68,22 @@ draw_fdr_barplot <- function(data, d_val) {
     )
 }
 
-p1 <- draw_fdr_barplot(plot_fig2_data, 0.5) + 
+p1 <- draw_fdr_barplot(plot_fig3_data, 0.5) + 
   labs(title = "a. Balanced +/- ")
 
-p2 <- draw_fdr_barplot(plot_fig2_data, 0.9) + 
+p2 <- draw_fdr_barplot(plot_fig3_data, 0.9) + 
   labs(title = "b. Dominant +")
 
-final_fig2 <- (p1 /plot_spacer()/ p2) + 
+final_fig3 <- (p1 /plot_spacer()/ p2) + 
   plot_layout(guides = "collect",
               heights = c(1,0.05,1)) & 
   theme(legend.position = "bottom")
 
-###### Fig4 FDR–power tradeoff for taxon-level mediator discovery ######
+###### Fig 5 FDR–power tradeoff for taxon-level mediator discovery ######
 
 TARGET_FDR <- 0.05
 
-fig4_data <- taxon_level_summary %>%
+fig5_data <- taxon_level_summary %>%
   filter(num2 > 0) %>% 
   group_by(template, n, p, d, num1A, num1B, num2, method) %>%
   summarise(
@@ -119,14 +96,14 @@ fig4_data <- taxon_level_summary %>%
     .groups = "drop"
   )
 
-plot_fig4_data <- fig4_data %>%
+plot_fig5_data <- fig4_data %>%
   mutate(
     num2 = as.factor(num2),       
     n_lab = paste0("n = ", n),    
     p_lab = paste0("p = ", p)
   )
 
-draw_fig4_aligned <- function(data, d_val) {
+draw_fig5_aligned <- function(data, d_val) {
   sub_data <- data %>% filter(d == d_val)
   ggplot(sub_data, aes(x = num2, y = max_power, fill = method)) +
     geom_bar(stat = "identity", position = position_dodge(width = 0.8), 
@@ -154,20 +131,20 @@ draw_fig4_aligned <- function(data, d_val) {
     )
 }
 
-p1 <- draw_fig4_aligned(plot_fig4_data, d_val = 0.5) + 
+p1 <- draw_fig5_aligned(plot_fig5_data, d_val = 0.5) + 
   labs(title = "a. Balanced +/-")
 
-p2 <- draw_fig4_aligned(plot_fig4_data, d_val = 0.9) + 
+p2 <- draw_fig5_aligned(plot_fig5_data, d_val = 0.9) + 
   labs(title = "b. Dominant +")
 
-final_fig4 <- (p1 /plot_spacer()/ p2) + 
+final_fig5 <- (p1 /plot_spacer()/ p2) + 
   plot_layout(guides = "collect",
               heights = c(1,0.05,1)) & 
   theme(legend.position = "bottom")
 
-###### Fig. S2 power of taxon level tests for benchmark methods ######
+###### Fig. S1 power of taxon level tests for benchmark methods ######
 
-plot_S2_data <- taxon_level_summary %>%
+plot_S1_data <- taxon_level_summary %>%
   filter(alpha == 0.05) %>%       
   filter(num2 > 0) %>%            # mediation_signal
   filter(method %in% benchmark_methods_taxon) %>%
@@ -205,19 +182,41 @@ draw_power_barplot <- function(data, d_val) {
     )
 }
 
-p1 <- draw_power_barplot(plot_S2_data, 0.5) + 
+p1 <- draw_power_barplot(plot_S1_data, 0.5) + 
   labs(title = "a. Balanced +/-")
 
-p2 <- draw_power_barplot(plot_S2_data, 0.9) + 
+p2 <- draw_power_barplot(plot_S1_data, 0.9) + 
   labs(title = "b. Dominant +")
 
-final_S2 <- (p1 /plot_spacer()/ p2) + 
+final_S1 <- (p1 /plot_spacer()/ p2) + 
   plot_layout(guides = "collect",
               heights = c(1,0.05,1)) & 
   theme(legend.position = "bottom")
 
 
-###### Fig S4 Empirical FDR of taxon-level mediation tests including CAMRA ######
+###### Fig S3 Empirical FDR of taxon-level mediation tests including CAMRA ######
+
+plot_S3_data <- taxon_level_summary %>%
+  filter(alpha == 0.05) %>%       
+  filter(num2 > 0) %>%            # mediation_signal
+  mutate(
+    num2 = as.factor(num2),       
+    n_lab = paste0("n = ", n),    
+    p_lab = paste0("p = ", p)
+  )
+
+p1 <- draw_fdr_barplot(plot_S3_data, 0.5) + 
+  labs(title = "a. Balanced +/-")
+
+p2 <- draw_fdr_barplot(plot_S3_data, 0.9) + 
+  labs(title = "b. Dominant +")
+
+final_S3 <- (p1 /plot_spacer()/ p2) + 
+  plot_layout(guides = "collect",
+              heights = c(1,0.05,1)) & 
+  theme(legend.position = "bottom")
+
+###### Fig S4 Power of taxon-level mediation tests including CAMRA ######
 
 plot_S4_data <- taxon_level_summary %>%
   filter(alpha == 0.05) %>%       
@@ -228,10 +227,10 @@ plot_S4_data <- taxon_level_summary %>%
     p_lab = paste0("p = ", p)
   )
 
-p1 <- draw_fdr_barplot(plot_S4_data, 0.5) + 
+p1 <- draw_power_barplot(plot_S4_data, 0.5) + 
   labs(title = "a. Balanced +/-")
 
-p2 <- draw_fdr_barplot(plot_S4_data, 0.9) + 
+p2 <- draw_power_barplot(plot_S4_data, 0.9) + 
   labs(title = "b. Dominant +")
 
 final_S4 <- (p1 /plot_spacer()/ p2) + 
@@ -239,24 +238,23 @@ final_S4 <- (p1 /plot_spacer()/ p2) +
               heights = c(1,0.05,1)) & 
   theme(legend.position = "bottom")
 
-###### Fig S5 Power of taxon-level mediation tests including CAMRA ######
 
-plot_S5_data <- taxon_level_summary %>%
-  filter(alpha == 0.05) %>%       
-  filter(num2 > 0) %>%            # mediation_signal
+###### Table ######
+###### Table S3 Computation time across various dataset dimensions ######
+
+tbl_runtime_raw <- taxon_level_long %>%
+  group_by(method, n, p) %>%
+  summarise(
+    med = median(runtime_sec, na.rm = TRUE),
+    q1  = quantile(runtime_sec, 0.25, na.rm = TRUE),
+    q3  = quantile(runtime_sec, 0.75, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
   mutate(
-    num2 = as.factor(num2),       
-    n_lab = paste0("n = ", n),    
-    p_lab = paste0("p = ", p)
+    val_str = sprintf("%.2f (%.2f, %.2f)", med, q1, q3),
+    setting = sprintf("n=%d, p=%d", n, p)
   )
 
-p1 <- draw_power_barplot(plot_S5_data, 0.5) + 
-  labs(title = "a. Balanced +/-")
-
-p2 <- draw_power_barplot(plot_S5_data, 0.9) + 
-  labs(title = "b. Dominant +")
-
-final_S5 <- (p1 /plot_spacer()/ p2) + 
-  plot_layout(guides = "collect",
-              heights = c(1,0.05,1)) & 
-  theme(legend.position = "bottom")
+table_s3 <- tbl_runtime_raw %>%
+  select(method, setting, val_str) %>%
+  pivot_wider(names_from = setting, values_from = val_str)
