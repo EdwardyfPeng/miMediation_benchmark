@@ -28,7 +28,7 @@ target_levels <- c(
 ######## Figure ########
 ###### Fig4 Quantile-quantile plots of p-values from global mediation tests when p = 200 ######
 
-plot3_data <- function(long_data, target_p = 200) {
+plot4_data <- function(long_data, target_p = 200) {
   df <- long_data 
   clean_df <- df %>%
     filter(p == target_p, num2==0) %>%
@@ -62,7 +62,7 @@ plot3_data <- function(long_data, target_p = 200) {
   return(qq_df)
 }
 
-draw_plot3 <- function(qq_data, p_val) {
+draw_plot4 <- function(qq_data, p_val) {
   ggplot(qq_data, aes(x = expected, y = observed)) +
     geom_abline(intercept = 0, slope = 1, color = "grey50", linetype = "dashed") +
     geom_point(aes(color = method), size = 1.2, alpha = 1) +
@@ -88,14 +88,14 @@ draw_plot3 <- function(qq_data, p_val) {
     )
 }
 
-plot3_qq_data <- plot3_data(global_test_long, target_p = 200)
-final_fig3 <- draw_plot3(plot3_qq_data, p_val = 200)
+plot4_qq_data <- plot4_data(global_test_long, target_p = 200)
+final_fig4 <- draw_plot4(plot4_qq_data, p_val = 200)
 
 
 ###### FigS2 Quantile-quantile plots of p-values from global mediation tests when p = 400 ######
 
-plotS3_qq_data <- plot3_data(global_test_long, target_p = 400)
-final_S3 <- draw_plot3(plotS3_qq_data, p_val = 400)
+plotS2_qq_data <- plot4_data(global_test_long, target_p = 400)
+final_S2 <- draw_plot4(plotS4_qq_data, p_val = 400)
 
 ######## Table ########
 ###### Table S2 Empirical Type I error rates for global mediation tests across mediation-null simulation settings ######
